@@ -150,6 +150,10 @@ class VbotBaseCommand extends Command
         try {
             $this->vbot->server->run();
         } catch(\Exception $e) {
+            if (!$this->confirm('Retry', true)) {
+                return null;
+            }
+
             $this->vbot->server->run();
         }
     }
