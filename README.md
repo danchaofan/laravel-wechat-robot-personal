@@ -41,7 +41,7 @@ php artisan key:generate
 
 1. 使用 [UPUPW](http://www.upupw.net/) 快速构建 [Nginx + php7.0](http://www.upupw.net/Nginx/)
 2. 使用 mobaXterm 作为 Terminal
-
+    
 
 ## 当前已定义的任务
  
@@ -132,10 +132,9 @@ php artisan key:generate
 
 ## 打赏支持
 
-* [给买一颗糖](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/donate666.png)
-* [给买一包糖](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/donate6666.png)
-* [土豪任性赏](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/donate.png)
+如果你觉得这个项目还不错，给你带来了方便和启发，不妨打赏，支持开源，共建优化
 
+![打赏支持](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/donate.png)
 
 ## License
 
