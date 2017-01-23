@@ -15,9 +15,15 @@
 ## 如：近期拜年场景
 
 * 可使用 `php artisan bainian` 执行全部联系人群发拜年
-* [截图：启动拜年](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/bainian.png) 
-* 或者实现：点击对话自动发送 `预设的祝福`、联系人回复消息自动发送 `预设的回应` 
-* [截图：拜年ing](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/bainian_ing.png)
+* 或者实现：点击对话自动发送 `预设的祝福`、联系人回复消息自动发送 `预设的回应` （祝福和回应可设置多条，每次触发一条，有缓存记录机制，不无限发送，每联系人祝福和回应发完自动截止）
+
+截图：启动拜年
+
+![截图：启动拜年](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/bainian.png) 
+
+截图：拜年ing
+
+![截图：拜年ing](https://github.com/webshiyue/laravel-wechat-robot-personal/blob/master/storage/sample/bainian_ing.png)
 
 
 ## 环境
