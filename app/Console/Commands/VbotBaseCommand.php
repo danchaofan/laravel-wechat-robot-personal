@@ -42,6 +42,13 @@ class VbotBaseCommand extends Command
     public $vbotDebugMode;
 
     /**
+     * 常用用户列表
+     *
+     * @var array
+     */
+    public $wechatUsers = [];
+
+    /**
      * 使用人的微信号（用于设立存储文件夹）
      *
      * @var string
@@ -49,7 +56,7 @@ class VbotBaseCommand extends Command
     public $wechatUserId;
 
     /**
-     * 使用人的微信昵称（用于群里被直呼时响应）
+     * 自己的微信昵称（也是群友称呼自己的默认昵称）
      *
      * @var string
      */
@@ -77,12 +84,6 @@ class VbotBaseCommand extends Command
     public function __construct()
     {
         parent::__construct();
-
-        // 默认参数完整性确认
-        if (!config('vbot.default_wechat_id') || !config('vbot.default_wechat_nickname')) {
-            $this->error("\n\n请完善项目 .env 文件中的 VBOT_DEFAULT_WECHAT_ID 与 VBOT_DEFAULT_WECHAT_NICKNAME 默认参数\n");
-            return null;
-        }
     }
 
     /**
@@ -90,42 +91,110 @@ class VbotBaseCommand extends Command
      */
     public function callHandle()
     {
-        // 选择要执行的操作任务
-        $this->warn("Tasks list:");
+        // 确认配置
+        $this->vbotDebugMode = env('VBOT_DEBUG_MODE', true);
+        $this->wechatNickname = env('VBOT_DEFAULT_WECHAT_NICKNAME');
 
-        $this->tasks = collect($this->tasks);
+        // 默认参数完整性确认
+        if (!$this->wechatUserId = env('VBOT_DEFAULT_WECHAT_ID')) {
+            throw new \Exception("请完善项目 .env 文件中的 VBOT_DEFAULT_WECHAT_ID 默认参数", 1);
+        }
+        if (!$this->wechatNickname = env('VBOT_DEFAULT_WECHAT_NICKNAME')) {
+            throw new \Exception("请完善项目 .env 文件中的 VBOT_DEFAULT_WECHAT_NICKNAME 默认参数", 1);
+        }
+        if (!$this->wechatGroupname = env('VBOT_DEFAULT_WECHAT_GROUPNAME')) {
+            throw new \Exception("请完善项目 .env 文件中的 VBOT_DEFAULT_WECHAT_GROUPNAME 默认参数", 1);
+        }
 
-        $this->tasks->each(function ($task, $key) {
-            $this->info("{$key}: {$task['description']}");
-        });
+        $this->wechatUsers[] = [
+            'wechat_userid' => $this->wechatUserId,
+            'wechat_nickname' => $this->wechatNickname,
+            'wechat_groupname' => $this->wechatGroupname,
+        ];
 
-        // 有自定义命令时默认选择 1
-        $taskKey = $this->ask('Select a task to run:', $this->tasks->count() > 1 ? 1 : 0);
-
-        $task = $this->tasks->first(function ($task, $key) use ($taskKey) {
-            if ($key == $taskKey) {
-                return true;
-            } else {
-                return false;
+        // 如果配置了其它微信号
+        for ($i = 2; $i <= 10; $i++) {
+            if (!$wechatUserId = env("VBOT_DEFAULT_WECHAT_ID_{$i}")) {
+                continue;
             }
-        });
+            if (!$wechatNickname = env("VBOT_DEFAULT_WECHAT_NICKNAME_{$i}")) {
+                $this->warn("未能识别或未设置 VBOT_DEFAULT_WECHAT_NICKNAME_{$i}");
+                continue;
+            }
+            if (!$wechatGroupName = env("VBOT_DEFAULT_WECHAT_GROUPNAME_{$i}")) {
+                $this->warn("未能识别或未设置 VBOT_DEFAULT_WECHAT_GROUPNAME_{$i}");
+                continue;
+            }
 
-        $taskName = $task['name'];
+            $this->wechatUsers[] = [
+                'wechat_userid' => $wechatUserId,
+                'wechat_nickname' => $wechatNickname,
+                'wechat_groupname' => $wechatGroupName,
+            ];
+        }
 
-        // 调试模式
-        $this->vbotDebugMode = config('vbot.debug_mode');
+        // 配置了多微信号可选时，提供选项
+        $this->wechatUsers = collect($this->wechatUsers);
+        if (1 < $this->wechatUsers->count()) {
+            $this->warn("\nWechat User list:");
 
-        // 微信号
-        $this->wechatUserId = $this->ask('your WechatId', config('vbot.default_wechat_id'));
+            $this->wechatUsers->each(function ($wechatUser, $key) {
+                $this->info("{$key}: {$wechatUser['wechat_nickname']}");
+            });
 
-        // 自己的微信昵称（也是群友称呼自己的默认昵称）
-        $this->wechatNickname = $this->ask('your WechatNickname', config('vbot.default_wechat_nickname'));
+            // 多用户时默认选择 0
+            $wechatUserKey = $this->ask('Select a wechat user to use:', 0);
 
-        // 默认通知发到哪个群
-        $this->wechatGroupname = config('vbot.default_wechat_groupname');
+            $wechatUser = $this->wechatUsers->first(function ($tmp, $key) use ($wechatUserKey) {
+                if ($key == $wechatUserKey) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
 
-        // 存储路径
+            if (!$wechatUser) {
+                throw new \Exception("No User is selected", 1);
+            }
+
+            $this->wechatUserId = $wechatUser['wechat_userid'];
+            $this->wechatNickname = $wechatUser['wechat_nickname'];
+            $this->wechatGroupname = $wechatUser['wechat_groupname'];
+        }
+
+        // 根据选择的用户设置存储路径
         $this->vbotStoragePath = storage_path('vbot/' . $this->wechatUserId);
+
+
+        // 多个任务可选时，提供选项
+        $this->tasks = collect($this->tasks);
+        if (1 < $this->tasks->count()) {
+            $this->warn("\nTasks list:");
+
+            $this->tasks->each(function ($task, $key) {
+                $this->info("{$key}: {$task['description']}");
+            });
+
+            // 有自定义任务时默认选择 1
+            $taskKey = $this->ask('Select a task to run:', 1);
+
+            $task = $this->tasks->first(function ($task, $key) use ($taskKey) {
+                if ($key == $taskKey) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            if (!$task) {
+                throw new \Exception("No Task is selected", 1);
+            }
+
+            $taskName = $task['name'];
+
+        } else {
+            $taskName = $this->tasks->first()['name'];
+        }
 
         // VBOT 实例化
         $this->vbot = new Vbot([
@@ -149,8 +218,8 @@ class VbotBaseCommand extends Command
         // VBOT 启动工作
         try {
             $this->vbot->server->run();
-        } catch(\Exception $e) {
-            if (!$this->confirm('Retry', true)) {
+        } catch (\Exception $e) {
+            if (!$this->confirm("\nRetry", true)) {
                 return null;
             }
 
