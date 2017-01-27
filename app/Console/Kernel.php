@@ -35,6 +35,8 @@ class Kernel extends ConsoleKernel
         Commands\Debug::class,
 
         Commands\Bainian::class,
+        Commands\Bainian2::class,
+        Commands\Bainian3::class,
         Commands\Test::class,
     ];
 
